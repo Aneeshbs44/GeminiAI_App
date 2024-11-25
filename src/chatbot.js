@@ -14,7 +14,7 @@ const ChatBot = ()=>{
     const [isspeaking, setisspeaking] = useState([]);
 
 
-const API_KEY = "###########################";
+const API_KEY = "AIzaSyCDwTKKud2BGuSRvvcySc6JRt9AE_XTgmI";
 
 const handleUserInput = async()=>{
     letUpdatedChat = [
@@ -94,7 +94,7 @@ const handleSpeech = async(text) =>{
             <Text style = {styles.buttonText}>Send</Text>
         </TouchableOpacity>
         </View>
-        {loading && <ActivityIndicator style = {styles.loading} color="#333"/> }
+        {Loading && <ActivityIndicator style = {styles.Loading} color="#333"/> }
         {error && <Text style = {styles.error}>{error}</Text>}
         </View>
     );
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
         color:"#fff",
         textAlign:"center",
     },
-    loading:{
+    Loading:{
         marginTop:10,
     },
     button:{
