@@ -1,10 +1,12 @@
 import axios from "axios";
-import ChatBubble from "./ChatBubble";
+import ChatBubble from "./chatbubble"
 import { speak, isSpeakingAsync, stop } from "expo-speech";
 import { useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { ActivityIndicator, FlatList } from "react-native-web";
 import { TextInput } from "react-native";
+import { View } from "react-native";
+import { Text } from "react-native";
 
 const ChatBot = ()=>{
     const [chat,Setchat] = useState([]);
