@@ -1,92 +1,116 @@
-import React from 'react';
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  FlatList, 
+  SafeAreaView,
+  ActivityIndicator,
+  Text
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
+import { MessageBubble } from '../../components/MessageBubble';
+import { ChatInput } from '../../components/ChatInput';
+import { generateResponse } from '../../utils/gemini';
+import { Message } from '../../types';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import chatbot from '../../src/chatbot';
-import ChatBot from '../../src/chatbot';
+export default function App() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
 
-export default function HomeScreen() {
+  const sendMessage = async () => {
+    if (inputText.trim() === '') return;
+
+    const userMessage: Message = {
+      id: Date.now(),
+      text: inputText.trim(),
+      sender: 'user'
+    };
+
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+      const responseText = await generateResponse(userMessage.text);
+      const botMessage: Message = {
+        id: Date.now() + 1,
+        text: responseText,
+        sender: 'bot'
+      };
+
+      setMessages(prevMessages => [...prevMessages, botMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: Date.now() + 1,
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'bot'
+      };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
+      
+      <View style={styles.header}>
+        <Text style={styles.headerText}>AI Chat Assistant</Text>
+      </View>
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={({ item }) => <MessageBubble message={item} />}
+        keyExtractor={item => item.id.toString()}
+        contentContainerStyle={styles.messageList}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+      />
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0084ff" />
+        </View>
+      )}
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-
-      {/* Add Chatbot section */}
-      <ThemedView style={styles.chatbotContainer}>
-        <ThemedText type="subtitle">Chat with us</ThemedText>
-      <ChatBot />
-      </ThemedView>
-    </ParallaxScrollView>
+      <ChatInput
+        inputText={inputText}
+        setInputText={setInputText}
+        sendMessage={sendMessage}
+        isLoading={isLoading}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  chatbotContainer: {
-    marginTop: 16,
-    padding: 8,
+  container: {
+    flex: 1,
     backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    paddingTop: Constants.statusBarHeight,
+  },
+  header: {
+    padding: 15,
+    backgroundColor: '#0084ff',
+    alignItems: 'center',
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  messageList: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -15 }, { translateY: -15 }],
   },
 });
